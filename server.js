@@ -62,14 +62,22 @@ Your output must be a single ready-to-paste prompt. Structure it with these clea
 
 **Responsive Behavior** — Notes on how the layout should adapt from desktop to tablet to mobile.
 
-Write in clear, direct language as if briefing a senior UI designer. Be specific and opinionated — vague instructions produce weak designs. Output only the structured prompt with no preamble, sign-off, or meta-commentary. Keep your total response under 4800 characters.`,
+Write in clear, direct language as if briefing a senior UI designer. Be specific and opinionated — vague instructions produce weak designs. Output only the structured prompt with no preamble, sign-off, or meta-commentary.
+
+Do not use any markdown formatting. No asterisks, no bold, no bullet dashes — just plain text. Write section titles as plain uppercase labels followed by a colon and newline, like: UI OVERVIEW:
+
+Keep your total response under 4800 characters.`,
       messages: [{ role: 'user', content: idea.trim() }],
     });
 
     const prompt = message.content
       .filter((b) => b.type === 'text')
       .map((b) => b.text)
-      .join('');
+      .join('')
+      .replace(/\*\*/g, '')           // strip bold markers
+      .replace(/^\n+/, '')            // remove leading blank lines
+      .replace(/\n{3,}/g, '\n\n')     // collapse 3+ blank lines to 1
+      .trim();
 
     res.json({ prompt });
   } catch (err) {
