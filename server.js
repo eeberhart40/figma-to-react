@@ -17,7 +17,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 /** Extract a Figma file key from any Figma URL format. */
 function parseFileKey(url) {
-  const match = url.match(/figma\.com\/(?:design|file|proto)\/([A-Za-z0-9_-]+)/);
+  const match = url.match(/figma\.com\/(?:design|file|proto|make)\/([A-Za-z0-9_-]+)/);
   return match?.[1] ?? null;
 }
 
@@ -130,6 +130,13 @@ app.post('/api/extract', async (req, res) => {
     }
     if (msg.includes('404') || msg.includes('Not Found')) {
       return res.status(404).json({ error: 'Figma file not found. Double-check the URL.' });
+    }
+    if (msg.includes('not supported')) {
+      return res.status(422).json({
+        error:
+          'Figma Make files cannot be read directly via the REST API. ' +
+          'In Figma Make, click the Figma logo → "Open in Figma" to get a standard design URL (figma.com/design/…), then paste that URL here.',
+      });
     }
     res.status(500).json({ error: msg });
   }

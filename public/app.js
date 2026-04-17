@@ -1,45 +1,91 @@
 /* ── State ───────────────────────────────────────────────────────────────── */
 const state = {
-  fileKey:  null,
-  specs:    null,
-  embedUrl: null,
+  fileKey:      null,
+  specs:        null,
+  embedUrl:     null,
+  hasCopied:    false, // whether the user has clicked "Copy Prompt"
 };
 
 /* ── DOM refs ────────────────────────────────────────────────────────────── */
 const $ = (id) => document.getElementById(id);
 
-// Step 0 — prompt generator
-const ideaInput          = $('idea-input');
-const btnExpand          = $('btn-expand');
-const expandError        = $('expand-error');
-const promptOutput       = $('prompt-output');
-const generatedPrompt    = $('generated-prompt');
-const btnCopyPrompt      = $('btn-copy-prompt');
-const btnOpenMake        = $('btn-open-make');
+// Tabs
+const tab1 = $('tab-1');
+const tab2 = $('tab-2');
+const tab3 = $('tab-3');
+const badge1 = $('badge-1');
+const badge2 = $('badge-2');
+const badge3 = $('badge-3');
 
-const urlInput           = $('figma-url');
-const btnLoad            = $('btn-load');
-const urlError           = $('url-error');
+// Panel 1 — Describe
+const ideaInput       = $('idea-input');
+const btnExpand       = $('btn-expand');
+const expandError     = $('expand-error');
 
-const stepDesign         = $('step-design');
-const figmaEmbed         = $('figma-embed');
-const fileKeyDisplay     = $('file-key-display');
-const specsDisplay       = $('specs-display');
-const btnToggleSpecs     = $('btn-toggle-specs');
+// Panel 2 — Copy Prompt
+const generatedPrompt = $('generated-prompt');
+const btnCopyPrompt   = $('btn-copy-prompt');
+const btnOpenMake     = $('btn-open-make');
 
-const stepReview         = $('step-review');
-const btnApprove         = $('btn-approve');
-const btnRequestChanges  = $('btn-request-changes');
-const reviewError        = $('review-error');
+// Panel 3 — Paste URL
+const urlInput        = $('figma-url');
+const btnLoad         = $('btn-load');
+const urlError        = $('url-error');
 
-const stepOutput         = $('step-output');
-const codeOutput         = $('code-output');
-const btnCopy            = $('btn-copy');
-const btnRegenerate      = $('btn-regenerate');
-const btnRestart         = $('btn-restart');
+// Cards below tabs
+const stepDesign      = $('step-design');
+const figmaEmbed      = $('figma-embed');
+const fileKeyDisplay  = $('file-key-display');
+const specsDisplay    = $('specs-display');
+const btnToggleSpecs  = $('btn-toggle-specs');
 
-const loadingOverlay     = $('loading-overlay');
-const loadingMsg         = $('loading-msg');
+const stepReview      = $('step-review');
+const btnApprove      = $('btn-approve');
+const btnRequestChanges = $('btn-request-changes');
+const reviewError     = $('review-error');
+
+const stepOutput      = $('step-output');
+const codeOutput      = $('code-output');
+const btnCopy         = $('btn-copy');
+const btnRegenerate   = $('btn-regenerate');
+const btnRestart      = $('btn-restart');
+
+const loadingOverlay  = $('loading-overlay');
+const loadingMsg      = $('loading-msg');
+
+/* ── Tab management ──────────────────────────────────────────────────────── */
+const TABS = [
+  { tab: tab1, badge: badge1, panel: $('panel-1') },
+  { tab: tab2, badge: badge2, panel: $('panel-2') },
+  { tab: tab3, badge: badge3, panel: $('panel-3') },
+];
+
+function switchToTab(n) {
+  // n is 1-indexed
+  TABS.forEach(({ tab, panel }, i) => {
+    const isActive = i + 1 === n;
+    tab.classList.toggle('tab-active', isActive);
+    panel.classList.toggle('hidden', !isActive);
+  });
+}
+
+function markTabDone(n) {
+  const { tab, badge } = TABS[n - 1];
+  tab.classList.remove('tab-active', 'tab-locked');
+  tab.classList.add('tab-done');
+  badge.textContent = '✓';
+}
+
+function unlockTab(n) {
+  TABS[n - 1].tab.classList.remove('tab-locked');
+}
+
+// Allow clicking done tabs to navigate back
+TABS.forEach(({ tab }, i) => {
+  tab.addEventListener('click', () => {
+    if (!tab.classList.contains('tab-locked')) switchToTab(i + 1);
+  });
+});
 
 /* ── Loading helpers ─────────────────────────────────────────────────────── */
 function showLoading(msg = 'Loading…') {
@@ -72,7 +118,7 @@ async function api(path, body) {
   return data;
 }
 
-/* ── Step 0: Expand idea into Figma Make prompt ──────────────────────────── */
+/* ── Tab 1: Generate Figma Make prompt ───────────────────────────────────── */
 async function handleExpandPrompt() {
   const idea = ideaInput.value.trim();
   clearError(expandError);
@@ -88,8 +134,17 @@ async function handleExpandPrompt() {
   try {
     const data = await api('/api/expand-prompt', { idea });
     generatedPrompt.value = data.prompt;
-    promptOutput.classList.remove('hidden');
-    promptOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    // Advance to tab 2
+    markTabDone(1);
+    unlockTab(2);
+    switchToTab(2);
+
+    // Reset button states in case user has come back around
+    state.hasCopied = false;
+    btnCopyPrompt.className = 'btn-primary';
+    btnCopyPrompt.textContent = 'Copy Prompt';
+    btnOpenMake.className = 'btn-ghost';
   } catch (err) {
     showError(expandError, err.message);
   } finally {
@@ -103,23 +158,34 @@ ideaInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleExpandPrompt();
 });
 
-/* ── Copy prompt to clipboard ────────────────────────────────────────────── */
+/* ── Tab 2: Copy prompt ──────────────────────────────────────────────────── */
 btnCopyPrompt.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(generatedPrompt.value);
-    btnCopyPrompt.textContent = 'Copied!';
-    setTimeout(() => (btnCopyPrompt.textContent = 'Copy prompt'), 2000);
   } catch {
-    btnCopyPrompt.textContent = 'Copy failed';
+    /* clipboard may be blocked; still advance the UI */
   }
+
+  state.hasCopied = true;
+
+  // Swap button emphasis: Copy becomes ghost, Open Make becomes primary
+  btnCopyPrompt.className = 'btn-ghost';
+  btnCopyPrompt.textContent = '✓ Copied';
+  btnOpenMake.className = 'btn-primary';
 });
 
-/* ── Open Figma Make ─────────────────────────────────────────────────────── */
+/* ── Tab 2: Open Figma Make ──────────────────────────────────────────────── */
 btnOpenMake.addEventListener('click', () => {
   window.open('https://www.figma.com/make', '_blank', 'noopener');
+
+  // Advance to tab 3 once the user opens Figma Make
+  markTabDone(2);
+  unlockTab(3);
+  switchToTab(3);
+  setTimeout(() => urlInput.focus(), 100);
 });
 
-/* ── Step 1 → 2+3: Load design ──────────────────────────────────────────── */
+/* ── Tab 3: Load design ──────────────────────────────────────────────────── */
 async function handleLoad() {
   const url = urlInput.value.trim();
   clearError(urlError);
@@ -139,11 +205,9 @@ async function handleLoad() {
     state.specs    = data.specs;
     state.embedUrl = data.embedUrl;
 
-    // Populate embed
     figmaEmbed.src             = data.embedUrl;
     fileKeyDisplay.textContent = data.fileKey;
 
-    // Populate specs panel — truncate for display only
     const specsStr = typeof data.specs === 'string'
       ? data.specs
       : JSON.stringify(data.specs, null, 2);
@@ -151,7 +215,7 @@ async function handleLoad() {
       ? specsStr.slice(0, 4000) + '\n\n… (truncated for display)'
       : specsStr;
 
-    // Show design + review sections together
+    markTabDone(3);
     stepDesign.classList.remove('hidden');
     stepReview.classList.remove('hidden');
     stepDesign.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -163,19 +227,22 @@ async function handleLoad() {
   }
 }
 
-/* ── Toggle specs panel ──────────────────────────────────────────────────── */
+btnLoad.addEventListener('click', handleLoad);
+urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLoad(); });
+
+/* ── Toggle specs ────────────────────────────────────────────────────────── */
 btnToggleSpecs.addEventListener('click', () => {
   const isHidden = specsDisplay.style.display === 'none';
-  specsDisplay.style.display = isHidden ? '' : 'none';
-  btnToggleSpecs.textContent  = isHidden ? 'Hide' : 'Show';
+  specsDisplay.style.display  = isHidden ? '' : 'none';
+  btnToggleSpecs.textContent   = isHidden ? 'Hide' : 'Show';
 });
 
-/* ── Step 3: Approve → generate component ───────────────────────────────── */
+/* ── Approve → generate component ───────────────────────────────────────── */
 async function handleApprove() {
   clearError(reviewError);
   showLoading('Generating React component…');
-  btnApprove.disabled         = true;
-  btnRequestChanges.disabled  = true;
+  btnApprove.disabled        = true;
+  btnRequestChanges.disabled = true;
 
   try {
     const data = await api('/api/generate', { specs: state.specs });
@@ -189,18 +256,19 @@ async function handleApprove() {
     showError(reviewError, err.message);
   } finally {
     hideLoading();
-    btnApprove.disabled         = false;
-    btnRequestChanges.disabled  = false;
+    btnApprove.disabled        = false;
+    btnRequestChanges.disabled = false;
   }
 }
 
-/* ── Step 3: Request Changes → open Figma Make ───────────────────────────── */
-function handleRequestChanges() {
-  const makeUrl = `https://www.figma.com/make/${state.fileKey}`;
-  window.open(makeUrl, '_blank', 'noopener');
-}
+btnApprove.addEventListener('click', handleApprove);
 
-/* ── Copy to clipboard ───────────────────────────────────────────────────── */
+/* ── Request Changes → open Figma Make ──────────────────────────────────── */
+btnRequestChanges.addEventListener('click', () => {
+  window.open(`https://www.figma.com/make/${state.fileKey}`, '_blank', 'noopener');
+});
+
+/* ── Copy generated code ─────────────────────────────────────────────────── */
 btnCopy.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(codeOutput.textContent);
@@ -216,19 +284,33 @@ btnRegenerate.addEventListener('click', handleApprove);
 
 /* ── Start over ──────────────────────────────────────────────────────────── */
 btnRestart.addEventListener('click', () => {
-  state.fileKey  = null;
-  state.specs    = null;
-  state.embedUrl = null;
+  // Reset state
+  Object.assign(state, { fileKey: null, specs: null, embedUrl: null, hasCopied: false });
 
+  // Reset fields
   ideaInput.value            = '';
   generatedPrompt.value      = '';
-  promptOutput.classList.add('hidden');
   urlInput.value             = '';
   figmaEmbed.src             = '';
   fileKeyDisplay.textContent = '';
   specsDisplay.textContent   = '';
   codeOutput.textContent     = '';
 
+  // Reset tab 2 button states
+  btnCopyPrompt.className   = 'btn-primary';
+  btnCopyPrompt.textContent = 'Copy Prompt';
+  btnOpenMake.className     = 'btn-ghost';
+
+  // Reset tabs to initial state
+  TABS.forEach(({ tab, badge }, i) => {
+    tab.classList.remove('tab-active', 'tab-done', 'tab-locked');
+    badge.textContent = String(i + 1);
+    if (i === 0) tab.classList.add('tab-active');
+    else tab.classList.add('tab-locked');
+  });
+  switchToTab(1);
+
+  // Hide cards below tabs
   stepDesign.classList.add('hidden');
   stepReview.classList.add('hidden');
   stepOutput.classList.add('hidden');
@@ -238,11 +320,5 @@ btnRestart.addEventListener('click', () => {
   clearError(reviewError);
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
-  urlInput.focus();
+  ideaInput.focus();
 });
-
-/* ── Wire up primary actions ─────────────────────────────────────────────── */
-btnLoad.addEventListener('click', handleLoad);
-urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLoad(); });
-btnApprove.addEventListener('click', handleApprove);
-btnRequestChanges.addEventListener('click', handleRequestChanges);
