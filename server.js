@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import { fileURLToPath } from 'url';
 import path from 'path';
+import Anthropic from '@anthropic-ai/sdk';
 import { getDesignSpecsViaREST, getDesignSpecsViaMCP } from './src/figma-mcp.js';
 import { generateReactComponent } from './src/generate.js';
 
@@ -26,6 +27,55 @@ function buildEmbedUrl(originalUrl) {
 }
 
 // ── Routes ────────────────────────────────────────────────────────────────────
+
+/**
+ * POST /api/expand-prompt
+ * Body: { idea: string }
+ * Returns: { prompt: string }
+ *
+ * Takes a rough plain-English UI idea and expands it into a structured,
+ * PRD-style prompt optimised for Figma Make.
+ */
+app.post('/api/expand-prompt', async (req, res) => {
+  const { idea } = req.body;
+  if (!idea?.trim()) {
+    return res.status(400).json({ error: 'A UI description is required.' });
+  }
+
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+  try {
+    const message = await anthropic.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 1500,
+      system: `You are an expert at writing prompts for Figma Make, Figma's AI-powered UI design generation tool. When a user describes a UI idea, you expand it into a detailed, structured design brief that Figma Make can use to generate a polished, complete design.
+
+Your output must be a single ready-to-paste prompt. Structure it with these clearly labelled sections:
+
+**UI Overview** — 2–3 sentences describing the interface, its purpose, and the target user.
+
+**Key Components & Layout** — A concise breakdown of the main UI elements (e.g. nav, hero, form fields, cards) and how they are arranged on the page.
+
+**Color & Typography** — A specific color palette (provide hex values where possible) and type guidance: font style, heading sizes, body size, and weight usage.
+
+**Interaction States** — How interactive elements behave: hover, focus, active, error, empty state, and loading state where relevant.
+
+**Responsive Behavior** — Notes on how the layout should adapt from desktop to tablet to mobile.
+
+Write in clear, direct language as if briefing a senior UI designer. Be specific and opinionated — vague instructions produce weak designs. Output only the structured prompt with no preamble, sign-off, or meta-commentary.`,
+      messages: [{ role: 'user', content: idea.trim() }],
+    });
+
+    const prompt = message.content
+      .filter((b) => b.type === 'text')
+      .map((b) => b.text)
+      .join('');
+
+    res.json({ prompt });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 /**
  * POST /api/extract

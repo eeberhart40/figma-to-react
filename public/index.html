@@ -17,17 +17,54 @@
         <span class="logo-icon">✦</span>
         <span class="logo-text">Figma <span class="arrow">→</span> React</span>
       </div>
-      <p class="tagline">Paste a Figma Make file, review the design, and generate a React component.</p>
+      <p class="tagline">Describe your UI, generate a Figma Make prompt, review the design, and ship a React component.</p>
     </div>
   </header>
 
   <main>
 
-    <!-- ── Step 1: URL Input ────────────────────────────────────────────── -->
-    <section class="card" id="step-url">
+    <!-- ── Step 0: Generate Figma Make prompt ────────────────────────────── -->
+    <section class="card" id="step-prompt">
       <div class="step-label">Step 1</div>
+      <h2>Describe your UI</h2>
+      <p class="hint">Give Claude a rough idea and it will expand it into a detailed, structured prompt optimized for Figma Make.</p>
+
+      <textarea
+        id="idea-input"
+        placeholder="e.g. A login screen for a B2B SaaS app with email, password, a primary sign-in button, and a forgot password link"
+        rows="3"
+      ></textarea>
+      <div class="button-row">
+        <button id="btn-expand" class="btn-primary">Generate Figma Make Prompt</button>
+      </div>
+      <div id="expand-error" class="error-msg hidden"></div>
+
+      <!-- Output — hidden until a prompt is generated -->
+      <div id="prompt-output" class="prompt-output hidden">
+        <div class="prompt-output-header">
+          <span class="embed-label">Your Figma Make prompt</span>
+          <span class="prompt-hint">Edit before using</span>
+        </div>
+        <textarea id="generated-prompt" rows="13" spellcheck="false"></textarea>
+        <div class="button-row">
+          <button id="btn-open-make" class="btn-primary">Open Figma Make ↗</button>
+          <button id="btn-copy-prompt" class="btn-ghost">Copy prompt</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Flow connector ─────────────────────────────────────────────────── -->
+    <div class="flow-connector">
+      <div class="connector-line"></div>
+      <span class="connector-label">Use the prompt in Figma Make, then paste the file URL below</span>
+      <div class="connector-line"></div>
+    </div>
+
+    <!-- ── Step 2: URL Input ─────────────────────────────────────────────── -->
+    <section class="card" id="step-url">
+      <div class="step-label">Step 2</div>
       <h2>Paste your Figma Make URL</h2>
-      <p class="hint">Open your Figma Make file, copy the URL from the browser, and paste it below.</p>
+      <p class="hint">Open your Figma Make file, copy the URL from the browser address bar, and paste it below.</p>
       <div class="url-row">
         <input
           type="url"
@@ -41,9 +78,9 @@
       <div id="url-error" class="error-msg hidden"></div>
     </section>
 
-    <!-- ── Step 2: Figma Embed + Specs ─────────────────────────────────── -->
+    <!-- ── Step 3: Figma Embed + Specs ─────────────────────────────────── -->
     <section class="card hidden" id="step-design">
-      <div class="step-label">Step 2</div>
+      <div class="step-label">Step 3</div>
       <h2>Your Design</h2>
 
       <div class="design-grid">
@@ -75,9 +112,9 @@
       </div>
     </section>
 
-    <!-- ── Step 3: Approve or Request Changes ───────────────────────────── -->
+    <!-- ── Step 4: Approve or Request Changes ───────────────────────────── -->
     <section class="card hidden" id="step-review">
-      <div class="step-label">Step 3</div>
+      <div class="step-label">Step 4</div>
       <h2>Ready to hand off?</h2>
       <p class="hint">
         If the design looks good, approve it and Claude will generate a React component.
@@ -94,9 +131,9 @@
       <div id="review-error" class="error-msg hidden"></div>
     </section>
 
-    <!-- ── Step 4: Generated Component ───────────────────────────────────── -->
+    <!-- ── Step 5: Generated Component ───────────────────────────────────── -->
     <section class="card hidden" id="step-output">
-      <div class="step-label">Step 4</div>
+      <div class="step-label">Step 5</div>
       <div class="output-header">
         <h2>Generated Component</h2>
         <button id="btn-copy" class="btn-ghost btn-sm">Copy code</button>

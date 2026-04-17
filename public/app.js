@@ -8,6 +8,15 @@ const state = {
 /* ── DOM refs ────────────────────────────────────────────────────────────── */
 const $ = (id) => document.getElementById(id);
 
+// Step 0 — prompt generator
+const ideaInput          = $('idea-input');
+const btnExpand          = $('btn-expand');
+const expandError        = $('expand-error');
+const promptOutput       = $('prompt-output');
+const generatedPrompt    = $('generated-prompt');
+const btnCopyPrompt      = $('btn-copy-prompt');
+const btnOpenMake        = $('btn-open-make');
+
 const urlInput           = $('figma-url');
 const btnLoad            = $('btn-load');
 const urlError           = $('url-error');
@@ -62,6 +71,53 @@ async function api(path, body) {
   if (!res.ok) throw new Error(data.error ?? `Request failed (${res.status})`);
   return data;
 }
+
+/* ── Step 0: Expand idea into Figma Make prompt ──────────────────────────── */
+async function handleExpandPrompt() {
+  const idea = ideaInput.value.trim();
+  clearError(expandError);
+
+  if (!idea) {
+    showError(expandError, 'Please describe your UI before generating a prompt.');
+    return;
+  }
+
+  showLoading('Generating your Figma Make prompt…');
+  btnExpand.disabled = true;
+
+  try {
+    const data = await api('/api/expand-prompt', { idea });
+    generatedPrompt.value = data.prompt;
+    promptOutput.classList.remove('hidden');
+    promptOutput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } catch (err) {
+    showError(expandError, err.message);
+  } finally {
+    hideLoading();
+    btnExpand.disabled = false;
+  }
+}
+
+btnExpand.addEventListener('click', handleExpandPrompt);
+ideaInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleExpandPrompt();
+});
+
+/* ── Copy prompt to clipboard ────────────────────────────────────────────── */
+btnCopyPrompt.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(generatedPrompt.value);
+    btnCopyPrompt.textContent = 'Copied!';
+    setTimeout(() => (btnCopyPrompt.textContent = 'Copy prompt'), 2000);
+  } catch {
+    btnCopyPrompt.textContent = 'Copy failed';
+  }
+});
+
+/* ── Open Figma Make ─────────────────────────────────────────────────────── */
+btnOpenMake.addEventListener('click', () => {
+  window.open('https://www.figma.com/make', '_blank', 'noopener');
+});
 
 /* ── Step 1 → 2+3: Load design ──────────────────────────────────────────── */
 async function handleLoad() {
@@ -164,6 +220,9 @@ btnRestart.addEventListener('click', () => {
   state.specs    = null;
   state.embedUrl = null;
 
+  ideaInput.value            = '';
+  generatedPrompt.value      = '';
+  promptOutput.classList.add('hidden');
   urlInput.value             = '';
   figmaEmbed.src             = '';
   fileKeyDisplay.textContent = '';
@@ -174,6 +233,7 @@ btnRestart.addEventListener('click', () => {
   stepReview.classList.add('hidden');
   stepOutput.classList.add('hidden');
 
+  clearError(expandError);
   clearError(urlError);
   clearError(reviewError);
 
