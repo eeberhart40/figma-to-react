@@ -387,6 +387,18 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
 }
 .btn-icon { font-size: 16px; }
 
+/* ── Character counter ───────────────────────────────────────────────────── */
+.char-counter {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: right;
+}
+.char-counter.char-over {
+  color: var(--error);
+  font-weight: 600;
+}
+
 /* ── Textareas ───────────────────────────────────────────────────────────── */
 textarea {
   width: 100%;

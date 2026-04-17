@@ -24,6 +24,7 @@ const expandError     = $('expand-error');
 
 // Panel 2 — Copy Prompt
 const generatedPrompt = $('generated-prompt');
+const charCount       = $('char-count');
 const btnCopyPrompt   = $('btn-copy-prompt');
 const btnOpenMake     = $('btn-open-make');
 
@@ -134,6 +135,7 @@ async function handleExpandPrompt() {
   try {
     const data = await api('/api/expand-prompt', { idea });
     generatedPrompt.value = data.prompt;
+    updateCharCount();
 
     // Advance to tab 2
     markTabDone(1);
@@ -152,6 +154,14 @@ async function handleExpandPrompt() {
     btnExpand.disabled = false;
   }
 }
+
+function updateCharCount() {
+  const len = generatedPrompt.value.length;
+  charCount.textContent = len;
+  charCount.closest('.char-counter').classList.toggle('char-over', len > 5000);
+}
+
+generatedPrompt.addEventListener('input', updateCharCount);
 
 btnExpand.addEventListener('click', handleExpandPrompt);
 ideaInput.addEventListener('keydown', (e) => {

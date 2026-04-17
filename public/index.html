@@ -60,7 +60,8 @@
       <div class="tab-panel hidden" id="panel-2">
         <h2>Your Figma Make prompt</h2>
         <p class="hint">Edit the prompt if needed, copy it, then open Figma Make and paste it there.</p>
-        <textarea id="generated-prompt" rows="14" spellcheck="false"></textarea>
+        <textarea id="generated-prompt" rows="14" spellcheck="false" maxlength="5000"></textarea>
+        <div class="char-counter"><span id="char-count">0</span> / 5000</div>
         <div class="button-row">
           <button id="btn-copy-prompt" class="btn-primary">Copy Prompt</button>
           <button id="btn-open-make" class="btn-ghost">Open Figma Make ↗</button>

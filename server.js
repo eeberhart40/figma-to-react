@@ -47,7 +47,7 @@ app.post('/api/expand-prompt', async (req, res) => {
   try {
     const message = await anthropic.messages.create({
       model: 'claude-opus-4-6',
-      max_tokens: 1500,
+      max_tokens: 1200,
       system: `You are an expert at writing prompts for Figma Make, Figma's AI-powered UI design generation tool. When a user describes a UI idea, you expand it into a detailed, structured design brief that Figma Make can use to generate a polished, complete design.
 
 Your output must be a single ready-to-paste prompt. Structure it with these clearly labelled sections:
@@ -62,7 +62,7 @@ Your output must be a single ready-to-paste prompt. Structure it with these clea
 
 **Responsive Behavior** — Notes on how the layout should adapt from desktop to tablet to mobile.
 
-Write in clear, direct language as if briefing a senior UI designer. Be specific and opinionated — vague instructions produce weak designs. Output only the structured prompt with no preamble, sign-off, or meta-commentary.`,
+Write in clear, direct language as if briefing a senior UI designer. Be specific and opinionated — vague instructions produce weak designs. Output only the structured prompt with no preamble, sign-off, or meta-commentary. Keep your total response under 4800 characters.`,
       messages: [{ role: 'user', content: idea.trim() }],
     });
 
