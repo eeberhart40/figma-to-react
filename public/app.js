@@ -169,7 +169,8 @@ $('btn-example').addEventListener('click', () => {
     "Ex: select location, select date window, select sport(s) and then the output " +
     "would be all available items to rent with filters at the top for price " +
     "(highest, lowest etc), type (road bike, gravel bike, mountain bike etc), " +
-    "and make and model.";
+    "and make and model. The aesthetic should feel like Turo but with an outdoorsy twist — " +
+    "think earthy tones, nature-inspired typography, and a rugged but clean UI.";
   ideaInput.focus();
 });
 
