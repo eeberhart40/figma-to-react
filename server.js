@@ -74,10 +74,9 @@ Keep your total response under 4800 characters.`,
       .filter((b) => b.type === 'text')
       .map((b) => b.text)
       .join('')
-      .replace(/\*\*/g, '')           // strip bold markers
-      .replace(/^\n+/, '')            // remove leading blank lines
-      .replace(/\n{3,}/g, '\n\n')     // collapse 3+ blank lines to 1
-      .trim();
+      .replace(/\*+/g, '')         // strip all asterisks (bold/italic markdown)
+      .replace(/\n{3,}/g, '\n\n') // collapse 3+ newlines to at most one blank line
+      .trim();                     // remove all leading/trailing whitespace
 
     res.json({ prompt });
   } catch (err) {
