@@ -163,6 +163,16 @@ function updateCharCount() {
 
 generatedPrompt.addEventListener('input', updateCharCount);
 
+$('btn-example').addEventListener('click', () => {
+  ideaInput.value =
+    "I want a Turo-like app but instead of renting cars you'd rent bikes. " +
+    "Ex: select location, select date window, select sport(s) and then the output " +
+    "would be all available items to rent with filters at the top for price " +
+    "(highest, lowest etc), type (road bike, gravel bike, mountain bike etc), " +
+    "and make and model.";
+  ideaInput.focus();
+});
+
 btnExpand.addEventListener('click', handleExpandPrompt);
 ideaInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) handleExpandPrompt();
