@@ -249,6 +249,56 @@ button:disabled { opacity: 0.5; cursor: not-allowed; }
   word-break: break-word;
 }
 
+/* ── Decision buttons (Approve / Request Changes) ───────────────────────── */
+.decision-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+.btn-approve {
+  flex: 1;
+  min-width: 200px;
+  padding: 16px 24px;
+  background: var(--success);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background .15s, transform .1s;
+}
+.btn-approve:hover:not(:disabled) { background: #0a9057; }
+.btn-approve:active { transform: scale(.98); }
+
+.btn-request-changes {
+  flex: 1;
+  min-width: 200px;
+  padding: 16px 24px;
+  background: transparent;
+  color: var(--text);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: border-color .15s, background .15s;
+}
+.btn-request-changes:hover:not(:disabled) {
+  border-color: #bbb;
+  background: #f7f7f7;
+}
+.btn-icon { font-size: 16px; }
+
 /* ── Textareas ───────────────────────────────────────────────────────────── */
 textarea {
   width: 100%;

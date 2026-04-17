@@ -8,36 +8,29 @@ const state = {
 /* ── DOM refs ────────────────────────────────────────────────────────────── */
 const $ = (id) => document.getElementById(id);
 
-const urlInput        = $('figma-url');
-const btnLoad         = $('btn-load');
-const urlError        = $('url-error');
+const urlInput           = $('figma-url');
+const btnLoad            = $('btn-load');
+const urlError           = $('url-error');
 
-const stepDesign      = $('step-design');
-const figmaEmbed      = $('figma-embed');
-const fileKeyDisplay  = $('file-key-display');
-const specsDisplay    = $('specs-display');
-const btnToggleSpecs  = $('btn-toggle-specs');
+const stepDesign         = $('step-design');
+const figmaEmbed         = $('figma-embed');
+const fileKeyDisplay     = $('file-key-display');
+const specsDisplay       = $('specs-display');
+const btnToggleSpecs     = $('btn-toggle-specs');
 
-const stepChanges     = $('step-changes');
-const changeRequest   = $('change-request');
-const btnSuggest      = $('btn-suggest');
-const btnSkipSuggest  = $('btn-skip-suggest');
-const suggestError    = $('suggest-error');
+const stepReview         = $('step-review');
+const btnApprove         = $('btn-approve');
+const btnRequestChanges  = $('btn-request-changes');
+const reviewError        = $('review-error');
 
-const stepSuggestions = $('step-suggestions');
-const suggestionsText = $('suggestions-text');
-const btnGenerate     = $('btn-generate');
-const btnBackChanges  = $('btn-back-changes');
-const generateError   = $('generate-error');
+const stepOutput         = $('step-output');
+const codeOutput         = $('code-output');
+const btnCopy            = $('btn-copy');
+const btnRegenerate      = $('btn-regenerate');
+const btnRestart         = $('btn-restart');
 
-const stepOutput      = $('step-output');
-const codeOutput      = $('code-output');
-const btnCopy         = $('btn-copy');
-const btnRegenerate   = $('btn-regenerate');
-const btnRestart      = $('btn-restart');
-
-const loadingOverlay  = $('loading-overlay');
-const loadingMsg      = $('loading-msg');
+const loadingOverlay     = $('loading-overlay');
+const loadingMsg         = $('loading-msg');
 
 /* ── Loading helpers ─────────────────────────────────────────────────────── */
 function showLoading(msg = 'Loading…') {
@@ -58,7 +51,7 @@ function clearError(el) {
   el.classList.add('hidden');
 }
 
-/* ── API helpers ─────────────────────────────────────────────────────────── */
+/* ── API helper ──────────────────────────────────────────────────────────── */
 async function api(path, body) {
   const res = await fetch(path, {
     method:  'POST',
@@ -70,7 +63,7 @@ async function api(path, body) {
   return data;
 }
 
-/* ── Step 1 → 2: Load design ─────────────────────────────────────────────── */
+/* ── Step 1 → 2+3: Load design ──────────────────────────────────────────── */
 async function handleLoad() {
   const url = urlInput.value.trim();
   clearError(urlError);
@@ -91,10 +84,10 @@ async function handleLoad() {
     state.embedUrl = data.embedUrl;
 
     // Populate embed
-    figmaEmbed.src       = data.embedUrl;
+    figmaEmbed.src             = data.embedUrl;
     fileKeyDisplay.textContent = data.fileKey;
 
-    // Populate specs — show a trimmed preview if it's huge
+    // Populate specs panel — truncate for display only
     const specsStr = typeof data.specs === 'string'
       ? data.specs
       : JSON.stringify(data.specs, null, 2);
@@ -102,9 +95,9 @@ async function handleLoad() {
       ? specsStr.slice(0, 4000) + '\n\n… (truncated for display)'
       : specsStr;
 
-    // Show sections
+    // Show design + review sections together
     stepDesign.classList.remove('hidden');
-    stepChanges.classList.remove('hidden');
+    stepReview.classList.remove('hidden');
     stepDesign.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
     showError(urlError, err.message);
@@ -114,86 +107,41 @@ async function handleLoad() {
   }
 }
 
-/* ── Step 3: Toggle specs panel ──────────────────────────────────────────── */
+/* ── Toggle specs panel ──────────────────────────────────────────────────── */
 btnToggleSpecs.addEventListener('click', () => {
-  const hidden = specsDisplay.style.display === 'none';
-  specsDisplay.style.display = hidden ? '' : 'none';
-  btnToggleSpecs.textContent  = hidden ? 'Hide' : 'Show';
+  const isHidden = specsDisplay.style.display === 'none';
+  specsDisplay.style.display = isHidden ? '' : 'none';
+  btnToggleSpecs.textContent  = isHidden ? 'Hide' : 'Show';
 });
 
-/* ── Step 3 → 4: Get AI suggestions ─────────────────────────────────────── */
-async function handleSuggest() {
-  const request = changeRequest.value.trim();
-  clearError(suggestError);
-
-  if (!request) {
-    showError(suggestError, 'Please describe the changes you want before clicking this button, or use "Skip" to go straight to code generation.');
-    return;
-  }
-
-  showLoading('Asking Claude to interpret your changes…');
-  btnSuggest.disabled = true;
-
-  try {
-    const data = await api('/api/suggest', {
-      specs:         state.specs,
-      changeRequest: request,
-    });
-
-    suggestionsText.value = data.suggestions;
-    stepSuggestions.classList.remove('hidden');
-    stepSuggestions.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  } catch (err) {
-    showError(suggestError, err.message);
-  } finally {
-    hideLoading();
-    btnSuggest.disabled = false;
-  }
-}
-
-/* ── Step 3 → 5: Skip suggestions, generate directly ────────────────────── */
-async function handleSkipAndGenerate() {
-  clearError(suggestError);
-  await generateComponent(changeRequest.value.trim() || null, null);
-}
-
-/* ── Step 4 → 5: Generate with approved changes ─────────────────────────── */
-async function handleGenerateWithChanges() {
-  clearError(generateError);
-  await generateComponent(
-    changeRequest.value.trim() || null,
-    suggestionsText.value.trim() || null,
-  );
-}
-
-/* ── Core generate function ──────────────────────────────────────────────── */
-async function generateComponent(prompt, approvedChanges) {
+/* ── Step 3: Approve → generate component ───────────────────────────────── */
+async function handleApprove() {
+  clearError(reviewError);
   showLoading('Generating React component…');
-  btnGenerate.disabled       = true;
-  btnSkipSuggest.disabled    = true;
+  btnApprove.disabled         = true;
+  btnRequestChanges.disabled  = true;
 
   try {
-    const data = await api('/api/generate', {
-      prompt,
-      specs:           state.specs,
-      approvedChanges,
-    });
+    const data = await api('/api/generate', { specs: state.specs });
 
-    // Render with syntax highlighting
     codeOutput.textContent = data.code;
     hljs.highlightElement(codeOutput);
 
     stepOutput.classList.remove('hidden');
     stepOutput.scrollIntoView({ behavior: 'smooth', block: 'start' });
   } catch (err) {
-    // Show error in whichever step triggered the generate
-    const errEl = stepSuggestions.classList.contains('hidden') ? suggestError : generateError;
-    showError(errEl, err.message);
+    showError(reviewError, err.message);
   } finally {
     hideLoading();
-    btnGenerate.disabled    = false;
-    btnSkipSuggest.disabled = false;
+    btnApprove.disabled         = false;
+    btnRequestChanges.disabled  = false;
   }
+}
+
+/* ── Step 3: Request Changes → open Figma Make ───────────────────────────── */
+function handleRequestChanges() {
+  const makeUrl = `https://www.figma.com/make/${state.fileKey}`;
+  window.open(makeUrl, '_blank', 'noopener');
 }
 
 /* ── Copy to clipboard ───────────────────────────────────────────────────── */
@@ -208,52 +156,33 @@ btnCopy.addEventListener('click', async () => {
 });
 
 /* ── Regenerate ──────────────────────────────────────────────────────────── */
-btnRegenerate.addEventListener('click', () => {
-  generateComponent(
-    changeRequest.value.trim() || null,
-    suggestionsText.value.trim() || null,
-  );
-});
+btnRegenerate.addEventListener('click', handleApprove);
 
 /* ── Start over ──────────────────────────────────────────────────────────── */
 btnRestart.addEventListener('click', () => {
-  // Reset state
   state.fileKey  = null;
   state.specs    = null;
   state.embedUrl = null;
 
-  // Reset fields
-  urlInput.value          = '';
-  changeRequest.value     = '';
-  suggestionsText.value   = '';
-  codeOutput.textContent  = '';
-  figmaEmbed.src          = '';
-  specsDisplay.textContent = '';
+  urlInput.value             = '';
+  figmaEmbed.src             = '';
   fileKeyDisplay.textContent = '';
+  specsDisplay.textContent   = '';
+  codeOutput.textContent     = '';
 
-  // Hide all but step 1
   stepDesign.classList.add('hidden');
-  stepChanges.classList.add('hidden');
-  stepSuggestions.classList.add('hidden');
+  stepReview.classList.add('hidden');
   stepOutput.classList.add('hidden');
 
   clearError(urlError);
-  clearError(suggestError);
-  clearError(generateError);
+  clearError(reviewError);
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
   urlInput.focus();
 });
 
-/* ── Back to changes ─────────────────────────────────────────────────────── */
-btnBackChanges.addEventListener('click', () => {
-  stepSuggestions.classList.add('hidden');
-  stepChanges.scrollIntoView({ behavior: 'smooth', block: 'start' });
-});
-
 /* ── Wire up primary actions ─────────────────────────────────────────────── */
 btnLoad.addEventListener('click', handleLoad);
 urlInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') handleLoad(); });
-btnSuggest.addEventListener('click', handleSuggest);
-btnSkipSuggest.addEventListener('click', handleSkipAndGenerate);
-btnGenerate.addEventListener('click', handleGenerateWithChanges);
+btnApprove.addEventListener('click', handleApprove);
+btnRequestChanges.addEventListener('click', handleRequestChanges);

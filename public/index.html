@@ -75,42 +75,28 @@
       </div>
     </section>
 
-    <!-- ── Step 3: Change Request ──────────────────────────────────────── -->
-    <section class="card hidden" id="step-changes">
+    <!-- ── Step 3: Approve or Request Changes ───────────────────────────── -->
+    <section class="card hidden" id="step-review">
       <div class="step-label">Step 3</div>
-      <h2>Describe any changes <span class="optional">(optional)</span></h2>
+      <h2>Ready to hand off?</h2>
       <p class="hint">
-        Tell Claude what to change before generating code — colors, layout, copy, behavior.
-        Skip this step if the design looks good as-is.
+        If the design looks good, approve it and Claude will generate a React component.
+        If you need to iterate, go back to Figma Make and return with the updated URL.
       </p>
-      <textarea
-        id="change-request"
-        placeholder="e.g. Make the primary button dark blue, increase font size to 16px, and add a 'Forgot password?' link below the form."
-        rows="4"
-      ></textarea>
-      <div class="button-row">
-        <button id="btn-suggest" class="btn-secondary">Get AI Suggestions</button>
-        <button id="btn-skip-suggest" class="btn-ghost">Skip → Generate Component</button>
+      <div class="decision-row">
+        <button id="btn-approve" class="btn-approve">
+          <span class="btn-icon">✓</span> Approve Design
+        </button>
+        <button id="btn-request-changes" class="btn-request-changes">
+          <span class="btn-icon">↗</span> Request Changes in Figma
+        </button>
       </div>
-      <div id="suggest-error" class="error-msg hidden"></div>
+      <div id="review-error" class="error-msg hidden"></div>
     </section>
 
-    <!-- ── Step 4: AI Suggestions ──────────────────────────────────────── -->
-    <section class="card hidden" id="step-suggestions">
-      <div class="step-label">Step 4</div>
-      <h2>Review suggested changes</h2>
-      <p class="hint">Claude has interpreted your request. Edit this list before generating code.</p>
-      <textarea id="suggestions-text" rows="8"></textarea>
-      <div class="button-row">
-        <button id="btn-generate" class="btn-primary">Generate React Component</button>
-        <button id="btn-back-changes" class="btn-ghost">← Back</button>
-      </div>
-      <div id="generate-error" class="error-msg hidden"></div>
-    </section>
-
-    <!-- ── Step 5: Generated Component ───────────────────────────────────── -->
+    <!-- ── Step 4: Generated Component ───────────────────────────────────── -->
     <section class="card hidden" id="step-output">
-      <div class="step-label">Step 5</div>
+      <div class="step-label">Step 4</div>
       <div class="output-header">
         <h2>Generated Component</h2>
         <button id="btn-copy" class="btn-ghost btn-sm">Copy code</button>

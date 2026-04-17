@@ -2,7 +2,6 @@ import 'dotenv/config';
 import express from 'express';
 import { fileURLToPath } from 'url';
 import path from 'path';
-import Anthropic from '@anthropic-ai/sdk';
 import { getDesignSpecsViaREST, getDesignSpecsViaMCP } from './src/figma-mcp.js';
 import { generateReactComponent } from './src/generate.js';
 
@@ -87,69 +86,19 @@ app.post('/api/extract', async (req, res) => {
 });
 
 /**
- * POST /api/suggest
- * Body: { specs: string, changeRequest: string }
- * Returns: { suggestions: string }
- *
- * Sends the design specs + user's plain-English change request to Claude.
- * Claude returns a structured list of suggested changes (not code yet).
- */
-app.post('/api/suggest', async (req, res) => {
-  const { specs, changeRequest } = req.body;
-  if (!specs || !changeRequest?.trim()) {
-    return res.status(400).json({ error: 'specs and changeRequest are both required.' });
-  }
-
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-  try {
-    const message = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
-      max_tokens: 1024,
-      system:
-        'You are a design-to-code assistant helping a non-technical user review a Figma design before it is turned into a React component. ' +
-        'Given design specs and a plain-English change request, produce a clear, numbered list of specific changes to apply. ' +
-        'Write as if briefing a developer — be precise about colors, sizes, layout, copy, and component behavior. ' +
-        'Do not write any code. Output only the numbered list.',
-      messages: [
-        {
-          role: 'user',
-          content:
-            `Design specs:\n${specs}\n\nChange request from user:\n"${changeRequest}"\n\n` +
-            'List the specific changes to make to the React component:',
-        },
-      ],
-    });
-
-    const suggestions = message.content
-      .filter((b) => b.type === 'text')
-      .map((b) => b.text)
-      .join('');
-
-    res.json({ suggestions });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/**
  * POST /api/generate
- * Body: { prompt: string, specs: string, approvedChanges?: string }
+ * Body: { specs: string }
  * Returns: { code: string }
  *
- * Generates the final React component. If approvedChanges is provided
- * (from the suggest step), it is appended to the prompt.
+ * Generates a React component from the design specs using Claude.
  */
 app.post('/api/generate', async (req, res) => {
-  const { prompt, specs, approvedChanges } = req.body;
+  const { specs } = req.body;
   if (!specs) {
     return res.status(400).json({ error: 'specs is required.' });
   }
 
-  const fullPrompt = [
-    prompt?.trim() || 'Generate a React component that matches the design',
-    approvedChanges?.trim() ? `\n\nApproved changes to apply:\n${approvedChanges}` : '',
-  ].join('');
+  const fullPrompt = 'Generate a React component that faithfully matches the design';
 
   try {
     const code = await generateReactComponent(fullPrompt, specs);
