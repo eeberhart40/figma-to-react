@@ -3,14 +3,16 @@
   "version": "1.0.0",
   "description": "Automates the Figma design-to-React component pipeline",
   "type": "module",
-  "main": "pipeline.js",
+  "main": "server.js",
   "scripts": {
-    "start": "node pipeline.js"
+    "start": "node server.js",
+    "pipeline": "node pipeline.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@modelcontextprotocol/sdk": "^1.10.2",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1"
   },
   "engines": {
     "node": ">=18.0.0"

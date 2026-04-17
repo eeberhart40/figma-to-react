@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Figma → React</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">✦</span>
+        <span class="logo-text">Figma <span class="arrow">→</span> React</span>
+      </div>
+      <p class="tagline">Paste a Figma Make file, review the design, and generate a React component.</p>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── Step 1: URL Input ────────────────────────────────────────────── -->
+    <section class="card" id="step-url">
+      <div class="step-label">Step 1</div>
+      <h2>Paste your Figma Make URL</h2>
+      <p class="hint">Open your Figma Make file, copy the URL from the browser, and paste it below.</p>
+      <div class="url-row">
+        <input
+          type="url"
+          id="figma-url"
+          placeholder="https://www.figma.com/design/…"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <button id="btn-load" class="btn-primary">Load Design</button>
+      </div>
+      <div id="url-error" class="error-msg hidden"></div>
+    </section>
+
+    <!-- ── Step 2: Figma Embed + Specs ─────────────────────────────────── -->
+    <section class="card hidden" id="step-design">
+      <div class="step-label">Step 2</div>
+      <h2>Your Design</h2>
+
+      <div class="design-grid">
+        <!-- Figma embed -->
+        <div class="embed-col">
+          <div class="embed-label">Live preview</div>
+          <div class="embed-wrapper">
+            <iframe
+              id="figma-embed"
+              src=""
+              allowfullscreen
+              loading="lazy"
+            ></iframe>
+          </div>
+          <div class="file-key-row">
+            <span class="muted">File key:</span>
+            <code id="file-key-display"></code>
+          </div>
+        </div>
+
+        <!-- Specs panel -->
+        <div class="specs-col">
+          <div class="specs-header">
+            <div class="embed-label">Extracted specs</div>
+            <button id="btn-toggle-specs" class="btn-ghost btn-sm">Hide</button>
+          </div>
+          <pre id="specs-display" class="specs-box"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Step 3: Change Request ──────────────────────────────────────── -->
+    <section class="card hidden" id="step-changes">
+      <div class="step-label">Step 3</div>
+      <h2>Describe any changes <span class="optional">(optional)</span></h2>
+      <p class="hint">
+        Tell Claude what to change before generating code — colors, layout, copy, behavior.
+        Skip this step if the design looks good as-is.
+      </p>
+      <textarea
+        id="change-request"
+        placeholder="e.g. Make the primary button dark blue, increase font size to 16px, and add a 'Forgot password?' link below the form."
+        rows="4"
+      ></textarea>
+      <div class="button-row">
+        <button id="btn-suggest" class="btn-secondary">Get AI Suggestions</button>
+        <button id="btn-skip-suggest" class="btn-ghost">Skip → Generate Component</button>
+      </div>
+      <div id="suggest-error" class="error-msg hidden"></div>
+    </section>
+
+    <!-- ── Step 4: AI Suggestions ──────────────────────────────────────── -->
+    <section class="card hidden" id="step-suggestions">
+      <div class="step-label">Step 4</div>
+      <h2>Review suggested changes</h2>
+      <p class="hint">Claude has interpreted your request. Edit this list before generating code.</p>
+      <textarea id="suggestions-text" rows="8"></textarea>
+      <div class="button-row">
+        <button id="btn-generate" class="btn-primary">Generate React Component</button>
+        <button id="btn-back-changes" class="btn-ghost">← Back</button>
+      </div>
+      <div id="generate-error" class="error-msg hidden"></div>
+    </section>
+
+    <!-- ── Step 5: Generated Component ───────────────────────────────────── -->
+    <section class="card hidden" id="step-output">
+      <div class="step-label">Step 5</div>
+      <div class="output-header">
+        <h2>Generated Component</h2>
+        <button id="btn-copy" class="btn-ghost btn-sm">Copy code</button>
+      </div>
+      <pre><code id="code-output" class="language-javascript"></code></pre>
+      <div class="output-actions">
+        <button id="btn-regenerate" class="btn-secondary">Regenerate</button>
+        <button id="btn-restart" class="btn-ghost">Start over</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── Loading overlay ─────────────────────────────────────────────────── -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="spinner"></div>
+    <p id="loading-msg">Loading…</p>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
